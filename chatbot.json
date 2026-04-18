@@ -1,0 +1,441 @@
+{
+  "name": "My workflow 3",
+  "nodes": [
+    {
+      "parameters": {
+        "updates": [
+          "message"
+        ],
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegramTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -448,
+        16
+      ],
+      "id": "3f653a43-a048-470b-9c5b-f9bc8c0ac374",
+      "name": "Telegram Trigger",
+      "webhookId": "80e99432-ff47-46fa-8077-6d59754fe22f",
+      "credentials": {
+        "telegramApi": {
+          "id": "NfTrxliPgnHjUfy5",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $('Telegram Trigger').item.json.message.text }}",
+        "options": {
+          "systemMessage": "=Eres el asistente virtual de FitZone Barcelona, un gimnasio moderno en Barcelona.\nTienes dos funciones principales: responder preguntas sobre el gimnasio y gestionar reservas de clases.\nINFORMACIÓN DEL GIMNASIO:\n{{ $json.info_gimnasio }}\n\nFUNCIÓN 1 - INFORMACIÓN:\n- Responde preguntas sobre horarios, tarifas, clases, instalaciones y cualquier info del gimnasio.\n- Usa únicamente la información proporcionada arriba.\n- Si no sabes algo, indica que contacten en recepción o llamen al +34 933 142 567.\n\nFUNCIÓN 2 - RESERVAS:\n- Si el usuario quiere reservar una clase, recoge estos 3 datos de uno en uno:\n  1. Clase (Yoga, Pilates, Spinning, CrossFit, Zumba, Body Pump, Boxeo, Meditación)\n  2. Día y hora de la clase\n  3. Nombre completo\n\n- Cuando tengas los 3 datos, confirma el resumen y pregunta si es correcto.\n- Cuando el usuario confirme, responde ÚNICAMENTE con este JSON y nada más:\n\n{\n  \"reserva_confirmada\": true,\n  \"clase\": \"nombre de la clase\",\n  \"dia\": \"día de la semana\",\n  \"hora\": \"hora de la clase\",\n  \"nombre\": \"nombre completo del usuario\"\n}\n\nINSTRUCCIONES GENERALES:\n- Responde siempre en el mismo idioma que el usuario.\n- Usa el historial de conversación para mantener el contexto.\n- Si el usuario responde con un \"sí\", \"no\" o respuesta corta, interpreta siempre en el contexto de tu pregunta anterior.\n- No uses emojis, asteriscos, guiones ni ningún tipo de formato markdown.\n- Usa solo texto plano.\n\nESTILO DE RESPUESTA:\n- Mensajes cortos y directos, máximo 3-4 líneas.\n- Una idea por mensaje, sin listas largas ni explicaciones innecesarias.\n- Si el usuario necesita más detalle, espera a que lo pida.\n- Nunca sobreexpliques, ve al grano."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        128,
+        16
+      ],
+      "id": "db581b7e-ec52-468e-8a4c-f4f42c02afa7",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "model": "llama-3.3-70b-versatile",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGroq",
+      "typeVersion": 1,
+      "position": [
+        -16,
+        224
+      ],
+      "id": "dd841bfd-1994-40bd-908c-8ea4ab9c5088",
+      "name": "Groq Chat Model",
+      "credentials": {
+        "groqApi": {
+          "id": "rMDjZRrLFXzgeJha",
+          "name": "Groq account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "={{ $('Telegram Trigger').item.json.message.chat.id }}"
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.3,
+      "position": [
+        144,
+        224
+      ],
+      "id": "4fa7c74c-4b74-4ca9-8afe-930d9344b2b8",
+      "name": "Simple Memory"
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Telegram Trigger').item.json.message.chat.id }}",
+        "text": "={{ $json.text }}",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        880,
+        112
+      ],
+      "id": "b5418a94-c43b-44e3-a363-c349ddec949a",
+      "name": "Send a text message",
+      "webhookId": "fa26356a-fbc9-4b43-bfe0-434df477cd84",
+      "credentials": {
+        "telegramApi": {
+          "id": "NfTrxliPgnHjUfy5",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const text = $input.first().json.output;\nconst formatted = text.replace(/\\\\n/g, '\\n');\nreturn [{ json: { text: formatted } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        480,
+        16
+      ],
+      "id": "526d9726-622f-4637-88b0-0b2ad99b06cb",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "bcf90432-ff50-4dca-bf67-0d142154f4e4",
+              "leftValue": "={{ $('AI Agent').item.json.output }}",
+              "rightValue": "reserva_confirmada",
+              "operator": {
+                "type": "string",
+                "operation": "contains"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        656,
+        16
+      ],
+      "id": "c324949e-974e-4e34-8754-df92a2a61e4d",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "jsCode": "const raw = $('AI Agent').first().json.output;\n\nconst jsonMatch = raw.match(/\\{[\\s\\S]*\\}/);\nif (!jsonMatch) throw new Error('No se encontró JSON en el output');\n\nconst parsed = JSON.parse(jsonMatch[0]);\n\nconst dias = {\n  'lunes': 1, 'martes': 2, 'miércoles': 3, 'miercoles': 3,\n  'jueves': 4, 'viernes': 5, 'sábado': 6, 'sabado': 6, 'domingo': 0\n};\n\nconst hoy = new Date();\nconst diaObjetivo = dias[parsed.dia.toLowerCase()];\nconst diaHoy = hoy.getDay();\nlet diff = diaObjetivo - diaHoy;\nif (diff <= 0) diff += 7;\n\nconst fechaClase = new Date(hoy);\nfechaClase.setDate(hoy.getDate() + diff);\n\nconst [hora, minutos] = parsed.hora.split(':');\nfechaClase.setHours(parseInt(hora) - 2, parseInt(minutos), 0, 0);\n\nconst fechaFin = new Date(fechaClase);\nfechaFin.setHours(fechaFin.getHours() + 1);\n\nreturn [{\n  json: {\n    clase: parsed.clase,\n    dia: parsed.dia,\n    hora: parsed.hora,\n    nombre: parsed.nombre,\n    chat_id: $('Telegram Trigger').first().json.message.chat.id,\n    fecha_inicio: fechaClase.toISOString(),\n    fecha_fin: fechaFin.toISOString()\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        864,
+        -96
+      ],
+      "id": "ab1bc6f1-4e63-420e-b8f5-c2e5f52b86e5",
+      "name": "Code in JavaScript1"
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Telegram Trigger').item.json.message.chat.id }}",
+        "text": "=Tu reserva ha sido confirmada.\n\nClase: {{ $('Code in JavaScript1').item.json.clase }}\nDia: {{ $('Code in JavaScript1').item.json.dia }}\nHora: {{ $('Code in JavaScript1').item.json.hora }}\nNombre: {{ $('Code in JavaScript1').item.json.nombre }}\nNos vemos en FitZone Barcelona.",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        1408,
+        -96
+      ],
+      "id": "3da274c5-39a1-4022-a805-9092d5022ab3",
+      "name": "Send a text message1",
+      "webhookId": "ea2b80e1-42b7-4a80-b5fe-0bc69f385022",
+      "credentials": {
+        "telegramApi": {
+          "id": "NfTrxliPgnHjUfy5",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "calendar": {
+          "__rl": true,
+          "value": "garciamiguezjordi@gmail.com",
+          "mode": "list",
+          "cachedResultName": "garciamiguezjordi@gmail.com"
+        },
+        "timeMin": "={{ $json.fecha_inicio }}",
+        "options": {
+          "query": "={{ $json.clase }}"
+        }
+      },
+      "type": "n8n-nodes-base.googleCalendar",
+      "typeVersion": 1.3,
+      "position": [
+        1056,
+        -96
+      ],
+      "id": "58568abf-91df-40ed-a730-e0b80a534c76",
+      "name": "Get many events",
+      "credentials": {
+        "googleCalendarOAuth2Api": {
+          "id": "OM5nVJLYHjUQpXF1",
+          "name": "Google Calendar account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "calendar": {
+          "__rl": true,
+          "value": "garciamiguezjordi@gmail.com",
+          "mode": "list",
+          "cachedResultName": "garciamiguezjordi@gmail.com"
+        },
+        "eventId": "={{ $json.id }}",
+        "updateFields": {
+          "description": "={{ $json.description + '\\n' + $('Code in JavaScript1').item.json.nombre }}"
+        }
+      },
+      "type": "n8n-nodes-base.googleCalendar",
+      "typeVersion": 1.3,
+      "position": [
+        1232,
+        -96
+      ],
+      "id": "12631078-5fe4-40f9-aaa6-be8bf3c41914",
+      "name": "Update an event",
+      "credentials": {
+        "googleCalendarOAuth2Api": {
+          "id": "OM5nVJLYHjUQpXF1",
+          "name": "Google Calendar account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1Ik0E_8ZlsSK09_6WSk66e6uYJzi1eQiZaCT7QhKQyU4",
+          "mode": "list",
+          "cachedResultName": "DB - Gimnasio",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1Ik0E_8ZlsSK09_6WSk66e6uYJzi1eQiZaCT7QhKQyU4/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1Ik0E_8ZlsSK09_6WSk66e6uYJzi1eQiZaCT7QhKQyU4/edit#gid=0"
+        },
+        "filtersUI": {
+          "values": []
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        -272,
+        16
+      ],
+      "id": "cfc926ae-4d6c-4931-8df3-9621de4a28d2",
+      "name": "Get row(s) in sheet",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "3Aa0Y3DUU8Xevvpy",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const rows = $input.all();\n\nconst info = rows\n  .map(row => `${row.json.Concepto}: ${row.json.Información}`)\n  .join('\\n');\n\nreturn [{ json: { info_gimnasio: info } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -64,
+        16
+      ],
+      "id": "56cecc6e-17cb-45dc-904a-8d3f8a46bcf9",
+      "name": "Code in JavaScript2"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Telegram Trigger": {
+      "main": [
+        [
+          {
+            "node": "Get row(s) in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Groq Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Simple Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Send a text message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript1": {
+      "main": [
+        [
+          {
+            "node": "Get many events",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send a text message1": {
+      "main": [
+        []
+      ]
+    },
+    "Get many events": {
+      "main": [
+        [
+          {
+            "node": "Update an event",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update an event": {
+      "main": [
+        [
+          {
+            "node": "Send a text message1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get row(s) in sheet": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript2": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "3d9329a8-103f-47bf-9249-4b3b7a828170",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "0e85308725cbfc971a4de16b0841e4af900f9cbf63ae24a06d18de104c10a4bd"
+  },
+  "id": "G1lrTg7LZxBsNjbY",
+  "tags": []
+}
