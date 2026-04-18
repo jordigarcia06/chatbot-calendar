@@ -25,7 +25,7 @@ El usuario le dice al bot qué clase quiere reservar. El agente recoge los datos
 **Actualización del calendario del gimnasio**
 Cuando se confirma una reserva, el bot busca el evento correspondiente en Google Calendar y añade el nombre del cliente en la descripción. El dueño ve en tiempo real quién ha reservado cada clase.
 
-![Evento en Google Calendar con reservas](calendar_show.png)
+![Evento en Google Calendar con reservas](calendar-show.png)
 
 ---
 
@@ -105,4 +105,4 @@ Los eventos de cada clase deben estar creados manualmente como eventos recurrent
 ## Autor
 
 **Jordi Garcia** — developer y consultor de automatización en Barcelona  
-[LinkedIn](www.linkedin.com/in/jordi-garcia-míguez-208842309) · [GitHub](https://github.com/jordigarcia06)
+[LinkedIn](https://www.linkedin.com/in/jordi-garcia-m%C3%ADguez-208842309) · [GitHub](https://github.com/jordigarcia06)
